@@ -1,0 +1,61 @@
+import { Button, ListView, Palette } from "std-widgets.slint";
+
+export component Sidebar {
+    in-out property <[string]> lif_files: [
+        "foo",
+        "bar",
+        "baz",
+    ];
+    in property <length> total_width: 100px;
+    in property <length> total_height: 100px;
+    in-out property <int> selected_lif_file: -1;
+    VerticalLayout {
+        spacing: 3px;
+        height: total_height;
+        alignment: LayoutAlignment.start;
+
+        Text {
+            text: "Controls";
+        }
+
+        genpdf_button := Button {
+            text: "Generate PDF";
+        }
+
+        print_button := Button {
+            text: "Print";
+        }
+
+        settings_button := Button {
+            text: "Settings";
+        }
+
+        Text { }
+
+        padding: 4px;
+        Text {
+            text: "Select Lif File";
+        }
+
+        ListView {
+            width: total_width * 0.8;
+            height: 70%;
+            for i in lif_files.length: TouchArea {
+                property <string> lif_file: lif_files[i];
+                Rectangle {
+                    background: i == selected_lif_file ? Palette.selection-background : Palette.alternate-background;
+                    border-radius: 2px;
+                }
+
+                Text {
+                    text: lif_file;
+                    color: i == selected_lif_file ? Palette.selection-foreground : Palette.foreground;
+                }
+
+                clicked => {
+                    selected_lif_file = i;
+                }
+            }
+        }
+    }
+}

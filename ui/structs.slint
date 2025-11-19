@@ -1,0 +1,25 @@
+export struct SlintEventRow {
+    event_code: string,
+    event_name: string,
+    start_time: string}
+
+export struct SlintSkaterTime {
+    minutes: int,
+    seconds: int,
+    subsecont: float}
+
+export struct SlintCompetitorRow {
+    place: int,
+    skater_id: int,
+    lane: int,
+    last_name: string,
+    first_name: string,
+    club: string,
+    time: SlintSkaterTime,
+    splits: [SlintSkaterTime],
+    start_time: string}
+
+export struct SlintRaceEvent {
+    event: SlintEventRow,
+    competitors: [SlintCompetitorRow]
+}

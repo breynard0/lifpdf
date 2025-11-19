@@ -1,0 +1,29 @@
+import { SlintRaceEvent } from "structs.slint";
+import { TabWidget, StandardTableView } from "std-widgets.slint";
+
+export component MainSection {
+    in property <bool> race_event_present;
+    in property <SlintRaceEvent> race_event;
+    in property <length> total_width: 100px;
+    in property <length> total_height: 100px;
+
+    TabWidget {
+        width: total_width;
+        height: total_height;
+        Tab {
+            title: "Raw Data";
+            if (race_event_present): VerticalLayout {
+                width: parent.width;
+                height: parent.height;
+                Text {
+                    text: race_event.event.event-name + "\n" + race_event.event.event-code + " | " + race_event.event.start-time;
+                    font-size: 24pt;
+                }
+            }
+        }
+
+        Tab {
+            title: "PDF";
+        }
+    }
+}
