@@ -1,23 +1,55 @@
-import { SlintRaceEvent } from "structs.slint";
+import { SlintEventRow } from "structs.slint";
 import { TabWidget, StandardTableView } from "std-widgets.slint";
 
 export component MainSection {
     in property <bool> race_event_present;
-    in property <SlintRaceEvent> race_event;
+    in property <SlintEventRow> event;
+    in property <[[StandardListViewItem]]> table_data;
     in property <length> total_width: 100px;
     in property <length> total_height: 100px;
+
+    out property <int> table_sort_index: -1;
+    out property <bool> table_sort_ascending: true;
+    callback table_changed();
 
     TabWidget {
         width: total_width;
         height: total_height;
         Tab {
             title: "Raw Data";
-            if (race_event_present): VerticalLayout {
+            if (!race_event_present): VerticalLayout {
                 width: parent.width;
                 height: parent.height;
                 Text {
-                    text: race_event.event.event-name + "\n" + race_event.event.event-code + " | " + race_event.event.start-time;
+                    text: event.event-name + "\n" + event.event-code + " | " + event.start-time;
                     font-size: 24pt;
+                }
+
+                StandardTableView {
+                    sort-ascending(index) => {
+                        root.table_sort_index = index;
+                        root.table_sort_ascending = true;
+                        root.table_changed();
+                    }
+
+                    sort-descending(index) => {
+                        root.table_sort_index = index;
+                        root.table_sort_ascending = false;
+                        root.table_changed();
+                    }
+                    columns: [
+                        { title: "Place" },
+                        { title: "ID" },
+                        { title: "Lane" },
+                        { title: "First Name" },
+                        { title: "Last Name" },
+                        { title: "Club" },
+                        { title: "Time" },
+                    ];
+                    rows: table_data;
+                    init => {
+                        table_changed();
+                    }
                 }
             }
         }

@@ -1,5 +1,7 @@
 use crate::{SlintCompetitorRow, SlintEventRow, SlintRaceEvent, SlintSkaterTime};
 use slint::VecModel;
+use std::cmp::Ordering;
+use std::fmt::{Display, format};
 
 #[derive(Clone, Debug, Default)]
 pub struct EventRow {
@@ -13,6 +15,36 @@ pub struct SkaterTime {
     pub minutes: u32,
     pub seconds: u32,
     pub subsecond: f32,
+}
+
+impl Display for SlintSkaterTime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = if self.minutes != 0 {
+            format!(
+                "{}:{}{}",
+                self.minutes,
+                self.seconds,
+                &self.subsecond.to_string()[1..]
+            )
+        } else {
+            format!("{}{}", self.seconds, &self.subsecond.to_string()[1..])
+        };
+        write!(f, "{}", str)
+    }
+}
+
+pub fn cmp_slint_skater_time(first: &SlintSkaterTime, other: &SlintSkaterTime) -> Ordering {
+    let mins = first.minutes.cmp(&other.minutes);
+    if mins.is_eq() {
+        let secs = first.seconds.cmp(&other.seconds);
+        if secs.is_eq() {
+            first.subsecond.total_cmp(&other.subsecond)
+        } else {
+            secs
+        }
+    } else {
+        mins
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -173,7 +205,7 @@ impl Into<SlintRaceEvent> for RaceEvent {
                         .map(|t| SlintSkaterTime {
                             minutes: t.minutes as i32,
                             seconds: t.seconds as i32,
-                            subsecont: t.subsecond,
+                            subsecond: t.subsecond,
                         })
                         .collect::<Vec<_>>(),
                 )),
@@ -181,7 +213,7 @@ impl Into<SlintRaceEvent> for RaceEvent {
                 time: SlintSkaterTime {
                     minutes: time.minutes as i32,
                     seconds: time.seconds as i32,
-                    subsecont: time.subsecond,
+                    subsecond: time.subsecond,
                 },
             })
         }

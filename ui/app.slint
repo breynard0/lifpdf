@@ -1,37 +1,57 @@
 import { Button, Palette } from "std-widgets.slint";
 import { Sidebar } from "sidebar.slint";
-import { SlintRaceEvent } from "structs.slint";
+import {
+    SlintEventRow,
+    SlintCompetitorRow,
+    SlintRaceEvent,
+    SlintSkaterTime,
+} from "structs.slint";
 import { MainSection } from "mainsection.slint";
 
 export component MainWindow inherits Window {
     width: 800px;
     height: 600px;
+    resize-border-width: 2px;
     property <float> split: 20%;
     property <bool> slider_hovered: false;
+    property <bool> resizing: false;
 
     out property <int> selected_lif_file: -1;
 
     in property <bool> race_event_set: false;
-    in property <SlintRaceEvent> input_event;
+    in property <SlintRaceEvent> full_event;
+    in property <SlintEventRow> event;
+    in property <[[StandardListViewItem]]> table_data;
+
+    out property <int> table_sort_index: main_section.table_sort_index;
+    out property <bool> table_sort_ascending: main_section.table_sort_ascending;
+
+    callback table_changed();
 
     // Slider touch area
     TouchArea {
         width: parent.width;
         height: parent.height;
         pointer-event(event) => {
-            if (abs(self.mouse-x - (parent.width * split)) <= 4px) {
+            if (event.kind == PointerEventKind.up) {
+                resizing = false;
+            }
+            if (abs(self.mouse-x - (parent.width * split)) >= 4px) {
                 slider_hovered = false;
-                self.mouse-cursor = MouseCursor.col-resize;
-            } else {
-                slider_hovered = true;
                 self.mouse-cursor = MouseCursor.default;
+            } else {
+                self.mouse-cursor = MouseCursor.col-resize;
+                slider_hovered = true;
+                if (event.kind == PointerEventKind.down) {
+                    resizing = true;
+                }
             }
         }
         moved => {
-            if (slider_hovered) {
+            if (resizing) {
                 split = 100% - ((parent.width - self.mouse-x) / parent.width);
-                split = max(split, 5%);
-                split = min(split, 95%);
+                split = max(split, 12%);
+                split = min(split, 97%);
             }
         }
     }
@@ -52,11 +72,14 @@ export component MainWindow inherits Window {
             background: Palette.background;
             width: parent.width * (100% - split);
             min-height: 16px; /* @lsp:ignore-node */
-            MainSection {
+            main_section := MainSection {
                 total_width: parent.width;
                 total_height: parent.height;
-                race_event: input_event;
-                race_event_present: race_event_set;
+                event: event;
+                table_data: table_data;
+                table_changed => {
+                    root.table_changed()
+                }
             }
         }
     }
@@ -65,6 +88,6 @@ export component MainWindow inherits Window {
     slider_rect := Rectangle {
         width: 2px;
         x: parent.width * split;
-        background: slider_hovered ? Palette.control-background : Palette.selection-background;
+        background: slider_hovered ? Palette.selection-background : Palette.control-background;
     }
 }
