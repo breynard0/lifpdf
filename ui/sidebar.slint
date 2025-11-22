@@ -1,4 +1,4 @@
-import { Button, ListView, Palette } from "std-widgets.slint";
+import { Button, ListView, Palette, LineEdit } from "std-widgets.slint";
 
 export component Sidebar {
     in-out property <[string]> lif_files;
@@ -7,14 +7,26 @@ export component Sidebar {
     in-out property <int> selected_lif_file: -1;
 
     callback settings_button_clicked();
+    callback regen_table();
+    callback filter_text_changed(string);
 
     VerticalLayout {
         spacing: 3px;
         height: total_height;
         alignment: LayoutAlignment.start;
+        padding-left: total_width * 0.2;
+        padding-right: total_width * 0.2;
 
         Text {
             text: "Controls";
+        }
+
+        Button {
+            text: "Select Most Recent";
+            clicked => {
+                selected_lif_file = 0;
+                regen_table();
+            }
         }
 
         genpdf_button := Button {
@@ -39,10 +51,17 @@ export component Sidebar {
             text: "Select Lif File";
         }
 
+        LineEdit {
+            placeholder-text: "Filter Races";
+            edited(text) => {
+                filter_text_changed(text);
+            }
+        }
+
         ListView {
-            width: total_width * 0.8;
             height: 70%;
             for i in lif_files.length: TouchArea {
+//            for i in 20: TouchArea {
                 property <string> lif_file: lif_files[i];
                 Rectangle {
                     background: i == selected_lif_file ? Palette.selection-background : Palette.alternate-background;
@@ -56,6 +75,7 @@ export component Sidebar {
 
                 clicked => {
                     selected_lif_file = i;
+                    regen_table();
                 }
             }
         }

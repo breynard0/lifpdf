@@ -1,7 +1,7 @@
 use crate::{SlintCompetitorRow, SlintEventRow, SlintRaceEvent, SlintSkaterTime};
 use slint::VecModel;
 use std::cmp::Ordering;
-use std::fmt::{Display, format};
+use std::fmt::Display;
 
 #[derive(Clone, Debug, Default)]
 pub struct EventRow {
@@ -21,7 +21,7 @@ impl Display for SlintSkaterTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = if self.minutes != 0 {
             format!(
-                "{}:{}{}",
+                "{}:{:02}{}",
                 self.minutes,
                 self.seconds,
                 &self.subsecond.to_string()[1..]
@@ -55,9 +55,7 @@ pub struct CompetitorRow {
     pub last_name: String,
     pub first_name: String,
     pub club: String,
-    pub time_raw: String,
     pub time: Option<SkaterTime>,
-    pub splits_raw: String,
     pub splits: Vec<SkaterTime>,
     pub start_time: String,
 }
@@ -133,26 +131,27 @@ impl RaceEvent {
             }
 
             competitor_entries.push(CompetitorRow {
+                // If can't parse place, probably a DNF
                 place: Some(
                     cur_line_split
                         .get(0)
                         .ok_or("Missing place")?
                         .parse::<u8>()
-                        .map_err(|_| "Couldn't parse place")?,
+                        .unwrap_or(255),
                 ),
                 skater_id: Some(
                     cur_line_split
                         .get(1)
                         .ok_or("Missing skater ID")?
                         .parse::<u32>()
-                        .map_err(|_| "Couldn't parse skater_id")?,
+                        .unwrap_or(i32::MAX as u32),
                 ),
                 lane: Some(
                     cur_line_split
                         .get(2)
                         .ok_or("Missing lane")?
                         .parse::<u8>()
-                        .map_err(|_| "Couldn't parse lane")?,
+                        .unwrap_or(255),
                 ),
                 last_name: cur_line_split
                     .get(3)
@@ -163,9 +162,7 @@ impl RaceEvent {
                     .ok_or("Missing first name")?
                     .to_string(),
                 club: cur_line_split.get(5).ok_or("Missing club")?.to_string(),
-                time_raw: time_raw.clone(),
                 time: Some(parse_time(time_raw)?),
-                splits_raw,
                 splits,
                 start_time: cur_line_split
                     .get(11)

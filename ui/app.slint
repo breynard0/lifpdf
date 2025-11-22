@@ -30,12 +30,15 @@ export component MainWindow inherits Window {
 
     out property <int> table_sort_index: main_section.table_sort_index;
     out property <bool> table_sort_ascending: main_section.table_sort_ascending;
+    out property <string> lif_file_filter;
 
     callback table_changed();
+    callback filter_changed();
 
     callback settings_add_path();
     callback settings_remove_path(int);
     callback settings_edit_path(int, string);
+    callback settings_close_button_clicked();
 
     // Slider touch area
     TouchArea {
@@ -73,11 +76,18 @@ export component MainWindow inherits Window {
             Sidebar {
                 total_width: parent.width;
                 total_height: parent.height;
-                selected_lif_file: selected_lif_file;
                 settings_button_clicked => {
                     settings_shown = true;
                 }
                 lif_files: lif_files;
+                regen_table => {
+                    selected_lif_file = self.selected_lif_file;
+                    table_changed()
+                }
+                filter_text_changed(text) => {
+                    lif_file_filter = text;
+                    filter_changed()
+                }
             }
         }
 
@@ -89,6 +99,7 @@ export component MainWindow inherits Window {
                 total_width: parent.width;
                 total_height: parent.height;
                 event: event;
+                race_event_present: race_event_set;
                 table_data: table_data;
                 table_changed => {
                     root.table_changed()
@@ -121,6 +132,7 @@ export component MainWindow inherits Window {
         }
         close_button_click => {
             settings_shown = false;
+            settings_close_button_clicked();
         }
     }
 }

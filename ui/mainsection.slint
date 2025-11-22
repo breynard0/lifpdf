@@ -17,7 +17,7 @@ export component MainSection {
         height: total_height;
         Tab {
             title: "Raw Data";
-            if (!race_event_present): VerticalLayout {
+            if (race_event_present): VerticalLayout {
                 width: parent.width;
                 height: parent.height;
                 Text {
