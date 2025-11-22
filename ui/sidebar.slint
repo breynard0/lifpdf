@@ -1,14 +1,12 @@
 import { Button, ListView, Palette } from "std-widgets.slint";
 
 export component Sidebar {
-    in-out property <[string]> lif_files: [
-        "foo",
-        "bar",
-        "baz",
-    ];
+    in-out property <[string]> lif_files;
     in property <length> total_width: 100px;
     in property <length> total_height: 100px;
     in-out property <int> selected_lif_file: -1;
+
+    callback settings_button_clicked();
 
     VerticalLayout {
         spacing: 3px;
@@ -29,6 +27,9 @@ export component Sidebar {
 
         settings_button := Button {
             text: "Settings";
+            clicked => {
+                settings_button_clicked()
+            }
         }
 
         Text { }

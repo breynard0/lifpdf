@@ -7,6 +7,7 @@ import {
     SlintSkaterTime,
 } from "structs.slint";
 import { MainSection } from "mainsection.slint";
+import { SettingsData, SettingsMenu } from "settings.slint";
 
 export component MainWindow inherits Window {
     width: 800px;
@@ -15,6 +16,7 @@ export component MainWindow inherits Window {
     property <float> split: 20%;
     property <bool> slider_hovered: false;
     property <bool> resizing: false;
+    property <bool> settings_shown;
 
     out property <int> selected_lif_file: -1;
 
@@ -22,11 +24,18 @@ export component MainWindow inherits Window {
     in property <SlintRaceEvent> full_event;
     in property <SlintEventRow> event;
     in property <[[StandardListViewItem]]> table_data;
+    in property <[string]> lif_files;
+
+    in-out property <SettingsData> settings_data;
 
     out property <int> table_sort_index: main_section.table_sort_index;
     out property <bool> table_sort_ascending: main_section.table_sort_ascending;
 
     callback table_changed();
+
+    callback settings_add_path();
+    callback settings_remove_path(int);
+    callback settings_edit_path(int, string);
 
     // Slider touch area
     TouchArea {
@@ -65,6 +74,10 @@ export component MainWindow inherits Window {
                 total_width: parent.width;
                 total_height: parent.height;
                 selected_lif_file: selected_lif_file;
+                settings_button_clicked => {
+                    settings_shown = true;
+                }
+                lif_files: lif_files;
             }
         }
 
@@ -89,5 +102,25 @@ export component MainWindow inherits Window {
         width: 2px;
         x: parent.width * split;
         background: slider_hovered ? Palette.selection-background : Palette.control-background;
+    }
+
+    if (settings_shown): SettingsMenu {
+        width: 80%;
+        height: 80%;
+
+        settings_data: settings_data;
+
+        settings_add_path => {
+            settings_add_path()
+        }
+        settings_edit_path(x, y) => {
+            settings_edit_path(x, y);
+        }
+        settings_remove_path(i) => {
+            settings_remove_path(i);
+        }
+        close_button_click => {
+            settings_shown = false;
+        }
     }
 }

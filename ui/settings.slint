@@ -1,0 +1,96 @@
+import {
+    Palette,
+    ListView,
+    Button,
+    TextEdit,
+    LineEdit,
+} from "std-widgets.slint";
+
+export struct SettingsData {
+    search_paths: [string],
+}
+
+export component SettingsMenu {
+    in-out property <SettingsData> settings_data;
+
+    callback settings_add_path();
+    callback settings_remove_path(int);
+    callback settings_edit_path(int, string);
+
+    callback close_button_click();
+
+    property <int> selected_path: -1;
+
+    // Wrapping in a TouchArea to prevent from focusing to things underneath
+    TouchArea {
+        Rectangle {
+            background: Palette.background;
+            border-width: 3px;
+            border-radius: 4px;
+            border-color: Palette.border;
+            VerticalLayout {
+                padding: parent.width * 0.05;
+                alignment: LayoutAlignment.start;
+                Text {
+                    text: "Settings";
+                    font-weight: 400;
+                    font-size: 24pt;
+                }
+
+                Text { }
+
+                Text {
+                    text: "LIF File Paths";
+                }
+
+                Rectangle {
+                    background: Palette.control-background;
+                    ListView {
+                        for i in settings_data.search-paths.length: LineEdit {
+                            text: settings_data.search-paths[i];
+
+                            accepted(text) => {
+                                settings_edit_path(i, text);
+                            }
+
+                            changed has-focus => {
+                                if (self.has-focus) {
+                                    selected_path = i;
+                                } else {
+                                    settings_edit_path(i, self.text);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    padding-top: 2px;
+                    width: root.width * 0.1;
+                    Button {
+                        text: "+";
+                        clicked => {
+                            settings_add_path()
+                        }
+                    }
+
+                    Button {
+                        text: "-";
+                        clicked => {
+                            settings_remove_path(selected_path);
+                        }
+                    }
+                }
+            }
+
+            close_button := Button {
+                text: "Close";
+                x: parent.width - self.width - 10px;
+                y: parent.height - self.height - 10px;
+                clicked => {
+                    close_button_click();
+                }
+            }
+        }
+    }
+}
