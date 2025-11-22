@@ -1,5 +1,6 @@
 use crate::config::{load_config, save_config};
-use crate::parse::{cmp_slint_skater_time, RaceEvent};
+use crate::parse::{RaceEvent, cmp_slint_skater_time};
+use crate::table_data::gen_table_row;
 use crate::{MainWindow, SettingsData, SlintCompetitorRow, SlintRaceEvent};
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use slint::{
@@ -312,45 +313,11 @@ fn gen_sorted_table(
     {
         let items = Rc::new(VecModel::default());
 
-        let mut time = r.time.to_string();
-        if r.time.minutes == 0 && r.time.seconds == 0 && r.time.subsecond == -1.0 {
-            time = "No Time".to_string();
-        }
+        let table_row = gen_table_row(r.into());
 
-        items.push(
-            slint::format!(
-                "{}",
-                match r.place {
-                    255 => "DNF".to_string(),
-                    _ => r.place.to_string(),
-                }
-            )
-            .into(),
-        );
-        items.push(
-            slint::format!(
-                "{}",
-                match r.skater_id {
-                    i32::MAX => "Missing".to_string(),
-                    _ => r.skater_id.to_string(),
-                }
-            )
-            .into(),
-        );
-        items.push(
-            slint::format!(
-                "{}",
-                match r.lane {
-                    255 => "Missing".to_string(),
-                    _ => r.lane.to_string(),
-                }
-            )
-            .into(),
-        );
-        items.push(slint::format!("{}", r.first_name).into());
-        items.push(slint::format!("{}", r.last_name).into());
-        items.push(slint::format!("{}", r.club).into());
-        items.push(slint::format!("{}", time).into());
+        for entry in table_row {
+            items.push(SharedString::from(entry).into());
+        }
 
         row_data.push(items.into());
     }

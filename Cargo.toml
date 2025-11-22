@@ -8,6 +8,8 @@ dirs = "6.0.0"
 notify = "8.2.0"
 
 oxidize-pdf = "1.6.4"
+pdfium-render = {version = "0.8.36", features = ["image", "static"]}
+
 slint = { version = "1.14.1", features = ["serde"] }
 slint-build = "1.14.1"
 

@@ -1,5 +1,5 @@
 use crate::{SlintCompetitorRow, SlintEventRow, SlintRaceEvent, SlintSkaterTime};
-use slint::VecModel;
+use slint::{Model, VecModel};
 use std::cmp::Ordering;
 use std::fmt::Display;
 
@@ -10,24 +10,38 @@ pub struct EventRow {
     pub start_time: String,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct SkaterTime {
     pub minutes: u32,
     pub seconds: u32,
     pub subsecond: f32,
 }
 
-impl Display for SlintSkaterTime {
+impl Into<SkaterTime> for SlintSkaterTime {
+    fn into(self) -> SkaterTime {
+        SkaterTime {
+            minutes: self.minutes as u32,
+            seconds: self.seconds as u32,
+            subsecond: self.subsecond,
+        }
+    }
+}
+
+impl Display for SkaterTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = if self.minutes != 0 {
             format!(
-                "{}:{:02}{}",
+                "{}:{:02}{:.3}",
                 self.minutes,
                 self.seconds,
-                &self.subsecond.to_string()[1..]
+                &format!("{:.3}", self.subsecond)[1..]
             )
         } else {
-            format!("{}{}", self.seconds, &self.subsecond.to_string()[1..])
+            format!(
+                "{}{:.9}",
+                self.seconds,
+                &format!("{:.3}", self.subsecond)[1..]
+            )
         };
         write!(f, "{}", str)
     }
@@ -58,6 +72,22 @@ pub struct CompetitorRow {
     pub time: Option<SkaterTime>,
     pub splits: Vec<SkaterTime>,
     pub start_time: String,
+}
+
+impl Into<CompetitorRow> for SlintCompetitorRow {
+    fn into(self) -> CompetitorRow {
+        CompetitorRow {
+            place: Some(self.place as u8),
+            skater_id: Some(self.skater_id as u32),
+            lane: Some(self.lane as u8),
+            last_name: self.last_name.into(),
+            first_name: self.first_name.into(),
+            club: self.club.into(),
+            time: Some(self.time.into()),
+            splits: self.splits.iter().map(|x| x.into()).collect::<Vec<_>>(),
+            start_time: self.start_time.into(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
