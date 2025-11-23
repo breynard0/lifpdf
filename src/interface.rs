@@ -1,11 +1,13 @@
 use crate::config::{load_config, save_config};
 use crate::parse::{RaceEvent, cmp_slint_skater_time};
+use crate::pdf::{gen_timesheet_pdf, pdf_to_image};
 use crate::table_data::gen_table_row;
 use crate::{MainWindow, SettingsData, SlintCompetitorRow, SlintRaceEvent};
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use slint::{
     ComponentHandle, Model, ModelExt, ModelRc, SharedString, StandardListViewItem, VecModel, Weak,
 };
+use std::cell::RefCell;
 use std::fs::read_dir;
 use std::io::Read;
 use std::rc::Rc;
@@ -19,7 +21,7 @@ fn watcher_fn(res: notify::Result<notify::Event>, main_window_weak: Weak<MainWin
             _ => {
                 slint::invoke_from_event_loop(move || {
                     if let Some(main_window) = main_window_weak.upgrade() {
-                        let settings = main_window.get_settings_data();
+                        let settings = load_config().unwrap();
                         let search_paths = settings
                             .search_paths
                             .iter()
@@ -27,9 +29,10 @@ fn watcher_fn(res: notify::Result<notify::Event>, main_window_weak: Weak<MainWin
                             .collect::<Vec<_>>();
                         let mut files = vec![];
                         for search_path in search_paths {
-                            for file in std::fs::read_dir(&search_path)
-                                .expect(&format!("Failed reading directory {}", search_path))
-                            {
+                            for file in match read_dir(&search_path) {
+                                Ok(x) => x.collect(),
+                                Err(_) => vec![],
+                            } {
                                 if let Ok(file) = file {
                                     let name = file.file_name().to_string_lossy().to_string();
                                     if name
@@ -123,8 +126,26 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
         })
     }
 
+    // Load settings data
     {
         let main_window_weak = main_window.as_weak();
+        main_window.on_settings_button_clicked(move || {
+            if let Some(main_window) = main_window_weak.upgrade() {
+                let config = load_config().unwrap();
+                main_window.set_settings_data(config);
+            }
+        })
+    }
+
+    // General settings updates
+    main_window.on_general_settings_update(move |settings_data| {
+        save_config(settings_data);
+    });
+
+    let cur_path = Rc::new(RefCell::new(None));
+    {
+        let main_window_weak = main_window.as_weak();
+        let cur_path_clone = cur_path.clone();
         main_window.on_table_changed(move || {
             if let Some(main_window) = main_window_weak.upgrade() {
                 let selected_lif = main_window.get_selected_lif_file();
@@ -140,7 +161,7 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
                     let event_name = lif_files.get(selected_lif as usize).unwrap();
                     let mut event_path = None;
 
-                    for search_path in main_window.get_settings_data().search_paths.iter() {
+                    for search_path in load_config().unwrap().search_paths.iter() {
                         let search_path = search_path.to_string();
                         for file in read_dir(search_path).expect("Failed to read directory") {
                             if let Ok(file) = file {
@@ -154,7 +175,7 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
 
                     match event_path {
                         Some(e) => {
-                            let mut f = std::fs::File::open(e).expect("Failed to open file");
+                            let mut f = std::fs::File::open(&e).expect("Failed to open file");
                             let mut buffer = Vec::new();
                             f.read_to_end(&mut buffer)
                                 .expect("Failed to read bytes of file");
@@ -172,6 +193,8 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
                                         gen_sorted_table(&main_window, &event.competitors).into(),
                                     );
                                     main_window.set_race_event_set(true);
+                                    let mut cur_path = cur_path_clone.borrow_mut();
+                                    *cur_path = Some(e.to_string_lossy().to_string());
                                 }
                                 Err(e) => {
                                     println!("Failed to parse {}, {}", event_name, e);
@@ -209,7 +232,7 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
         let main_window_weak = main_window.as_weak();
         main_window.on_settings_add_path(move || {
             if let Some(main_window) = main_window_weak.upgrade() {
-                let settings_data = &mut main_window.get_settings_data();
+                let settings_data = &mut load_config().unwrap();
                 let paths: &mut Vec<String> = &mut settings_data
                     .search_paths
                     .iter()
@@ -225,7 +248,7 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
         let main_window_weak = main_window.as_weak();
         main_window.on_settings_remove_path(move |i| {
             if let Some(main_window) = main_window_weak.upgrade() {
-                let settings_data = &mut main_window.get_settings_data();
+                let settings_data = &mut load_config().unwrap();
                 let paths: &mut Vec<String> = &mut settings_data
                     .search_paths
                     .iter()
@@ -245,7 +268,7 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
         let main_window_weak = main_window.as_weak();
         main_window.on_settings_edit_path(move |i, s| {
             if let Some(main_window) = main_window_weak.upgrade() {
-                let settings_data = &mut main_window.get_settings_data();
+                let settings_data = &mut load_config().unwrap();
                 let paths: &mut Vec<String> = &mut settings_data
                     .search_paths
                     .iter()
@@ -259,13 +282,80 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
             }
         });
     }
+
+    // PDF generation and display
+    let pub_pdf = Rc::new(RefCell::new(None));
+    {
+        let main_window_weak = main_window.as_weak();
+        let cur_path_clone = cur_path.clone();
+        main_window.on_genpdf_button_clicked(move || {
+            if let Some(main_window) = main_window_weak.upgrade() {
+                let path = cur_path_clone.borrow();
+                if let Some(path) = path.as_ref() {
+                    let mut f = std::fs::File::open(path).expect("Failed to open file");
+                    let mut buffer = Vec::new();
+                    f.read_to_end(&mut buffer)
+                        .expect("Failed to read bytes of file");
+
+                    let mut file_contents = String::new();
+                    for byte in buffer {
+                        file_contents.push(byte as char);
+                    }
+
+                    match RaceEvent::parse_lif(file_contents, path.clone()) {
+                        Ok(event) => {
+                            let mut pdf =
+                                gen_timesheet_pdf(event.clone()).expect("PDF generation failed");
+
+                            let (images, width, height) = pdf_to_image(&mut pdf).unwrap();
+                            let mut slint_imgs = vec![];
+                            for image in images {
+                                let img_buf = slint::Image::from_rgba8(
+                                    slint::SharedPixelBuffer::clone_from_slice(
+                                        &image, width, height,
+                                    ),
+                                );
+                                slint_imgs.push(img_buf);
+                            }
+
+                            main_window.set_pdf_images(ModelRc::new(VecModel::from(slint_imgs)));
+                            main_window.set_tab_index(1);
+
+                            if load_config().unwrap().pdf_output_enabled {
+                                if !std::fs::exists(load_config().unwrap().pdf_output_path).unwrap()
+                                {
+                                    let _ = std::fs::create_dir_all(
+                                        load_config().unwrap().pdf_output_path,
+                                    );
+                                }
+
+                                pdf.save(format!(
+                                    "{}/{}.pdf",
+                                    load_config().unwrap().pdf_output_path,
+                                    event.event.event_code
+                                ))
+                                .expect("Error writing PDF to disk");
+                            }
+
+                            let mut pub_pdf = pub_pdf.borrow_mut();
+                            *pub_pdf = Some(pdf);
+                        }
+                        Err(e) => {
+                            println!("Failed to parse {}, {}", path, e);
+                        }
+                    };
+                }
+            }
+        });
+    }
+
     Ok(())
 }
 
 fn set_watcher(watcher_cln: Arc<Mutex<RecommendedWatcher>>, main_window: &MainWindow) {
     let mut watcher = watcher_cln.lock().unwrap();
     // Get paths
-    let settings_data = &mut main_window.get_settings_data();
+    let settings_data = &mut load_config().unwrap();
     let paths: &mut Vec<String> = &mut settings_data
         .search_paths
         .iter()

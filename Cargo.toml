@@ -8,13 +8,18 @@ dirs = "6.0.0"
 notify = "8.2.0"
 
 oxidize-pdf = "1.6.4"
-pdfium-render = {version = "0.8.36", features = ["image", "static"]}
+hayro = { version = "0.4.0", features = ["embed-fonts"] }
+hayro-interpret = "0.4.0"
 
-slint = { version = "1.14.1", features = ["serde"] }
+slint = { version = "1.14.1", features = ["serde", "live-preview"] }
 slint-build = "1.14.1"
 
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
+
+native-dialog = "0.9.4"
+
+printers = "2.2.1"
 
 [build-dependencies]
 slint-build = "1.14.1"

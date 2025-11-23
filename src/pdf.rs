@@ -1,7 +1,10 @@
 use crate::parse::*;
 use crate::table_data::gen_table_row;
+use hayro::{RenderSettings, render};
+use hayro_interpret::InterpreterSettings;
 use oxidize_pdf::text::table::GridStyle;
 use oxidize_pdf::{Color, Document, Font, HeaderStyle, Page, Table, TableOptions, TextAlign};
+use std::sync::Arc;
 
 pub fn gen_timesheet_pdf(event: RaceEvent) -> Result<Document, Box<dyn std::error::Error>> {
     let mut doc = Document::new();
@@ -86,14 +89,14 @@ pub fn gen_timesheet_pdf(event: RaceEvent) -> Result<Document, Box<dyn std::erro
     while rows_left {
         let mut cur_row = vec![(i + 1).to_string()];
 
+        rows_left = false;
         for competitor in &event.competitors {
-            rows_left = false;
             if i < competitor.splits.len() {
                 rows_left = true;
                 if competitor.splits[i].subsecond >= 0.0 {
                     cur_row.push(competitor.splits[i].to_string());
                 } else {
-                    cur_row.push(String::new())
+                    cur_row.push("Junk".to_string())
                 }
             } else {
                 cur_row.push(String::new());
@@ -115,7 +118,14 @@ pub fn gen_timesheet_pdf(event: RaceEvent) -> Result<Document, Box<dyn std::erro
     }
 
     rows.reverse();
-    let (rows_b, rows_a) = rows.split_at(rows.len() - number);
+    let (rows_b, rows_a) = match rows.len() > number {
+        true => {
+            let split = rows.split_at(rows.len() - number);
+            (split.0.to_vec(), split.1.to_vec())
+        }
+        false => (vec![], rows),
+    };
+
     for row in rows_a {
         number += 1;
         transponder_table.add_row(row.clone())?;
@@ -166,4 +176,37 @@ pub fn gen_timesheet_pdf(event: RaceEvent) -> Result<Document, Box<dyn std::erro
     doc.save("./out.pdf").unwrap();
 
     Ok(doc)
+}
+
+pub fn pdf_to_image(
+    document: &mut Document,
+) -> Result<(Vec<Vec<u8>>, u32, u32), Box<dyn std::error::Error>> {
+    let mut buffer = vec![];
+    document.write(&mut buffer)?;
+
+    let data = Arc::new(buffer);
+    let hayro_pdf = hayro::Pdf::new(data).expect("Internal movement of PDF data somehow failed");
+
+    let interpreter_settings = InterpreterSettings::default();
+
+    let scaling = 4.0;
+    let render_settings = RenderSettings {
+        x_scale: scaling,
+        y_scale: scaling,
+        ..Default::default()
+    };
+
+    let mut out = vec![];
+    for page in hayro_pdf.pages().iter() {
+        let pixmap = render(page, &interpreter_settings, &render_settings);
+        let vec1 = pixmap.take_u8();
+        out.push(vec1);
+        // std::fs::write("./out.png", pixmap.take_png()).unwrap();
+    }
+
+    Ok((
+        out,
+        (scaling * hayro_pdf.pages()[0].render_dimensions().0) as u32,
+        (scaling * hayro_pdf.pages()[0].render_dimensions().1) as u32,
+    ))
 }

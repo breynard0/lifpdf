@@ -4,11 +4,13 @@ import {
     Button,
     TextEdit,
     LineEdit,
+    CheckBox,
 } from "std-widgets.slint";
 
 export struct SettingsData {
     search_paths: [string],
-}
+    pdf_output_enabled: bool,
+    pdf_output_path: string}
 
 export component SettingsMenu {
     in-out property <SettingsData> settings_data;
@@ -16,6 +18,8 @@ export component SettingsMenu {
     callback settings_add_path();
     callback settings_remove_path(int);
     callback settings_edit_path(int, string);
+
+    callback settings_update();
 
     callback close_button_click();
 
@@ -79,6 +83,28 @@ export component SettingsMenu {
                         clicked => {
                             settings_remove_path(selected_path);
                         }
+                    }
+                }
+
+                Text { }
+
+                CheckBox {
+                    text: "Enable automatic PDF output to a directory";
+                    checked: settings_data.pdf-output-enabled;
+                    changed checked => {
+                        settings_data.pdf-output-enabled = self.checked;
+                        settings_update();
+                    }
+                }
+
+                if (settings_data.pdf-output-enabled): Text {
+                    text: "Specify output directory:";
+                }
+                if (settings_data.pdf-output-enabled):LineEdit {
+                    text: settings_data.pdf-output-path;
+                    edited(text) => {
+                        settings_data.pdf-output-path = text;
+                        settings_update();
                     }
                 }
             }

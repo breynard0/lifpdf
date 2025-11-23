@@ -10,8 +10,6 @@ import { MainSection } from "mainsection.slint";
 import { SettingsData, SettingsMenu } from "settings.slint";
 
 export component MainWindow inherits Window {
-    width: 800px;
-    height: 600px;
     resize-border-width: 2px;
     property <float> split: 20%;
     property <bool> slider_hovered: false;
@@ -28,9 +26,16 @@ export component MainWindow inherits Window {
 
     in-out property <SettingsData> settings_data;
 
+    in property <[image]> pdf_images;
+    out property <float> pdf_image_width;
+
     out property <int> table_sort_index: main_section.table_sort_index;
     out property <bool> table_sort_ascending: main_section.table_sort_ascending;
     out property <string> lif_file_filter;
+
+    in property <int> tab_index: 0;
+
+    callback genpdf_button_clicked();
 
     callback table_changed();
     callback filter_changed();
@@ -38,6 +43,8 @@ export component MainWindow inherits Window {
     callback settings_add_path();
     callback settings_remove_path(int);
     callback settings_edit_path(int, string);
+    callback general_settings_update(SettingsData);
+    callback settings_button_clicked();
     callback settings_close_button_clicked();
 
     // Slider touch area
@@ -68,43 +75,54 @@ export component MainWindow inherits Window {
         }
     }
 
-    HorizontalLayout {
-        Rectangle {
-            background: Palette.background;
-            width: parent.width * split;
-            min-height: 16px; /* @lsp:ignore-node */
+    Rectangle {
+        background: Palette.background;
+        width: parent.width * split;
+        x: 0px;
+        min-height: 16px; /* @lsp:ignore-node */
             Sidebar {
-                total_width: parent.width;
-                total_height: parent.height;
-                settings_button_clicked => {
-                    settings_shown = true;
-                }
-                lif_files: lif_files;
-                regen_table => {
-                    selected_lif_file = self.selected_lif_file;
-                    table_changed()
-                }
-                filter_text_changed(text) => {
-                    lif_file_filter = text;
-                    filter_changed()
-                }
+            total_width: parent.width;
+            total_height: parent.height;
+            settings_button_clicked => {
+                settings_shown = true;
+                settings_button_clicked();
+            }
+            lif_files: lif_files;
+            regen_table => {
+                selected_lif_file = self.selected_lif_file;
+                main_section.inner_tab_index = 0;
+                table_changed()
+            }
+            filter_text_changed(text) => {
+                lif_file_filter = text;
+                filter_changed()
+            }
+            genpdf_button_clicked => {
+                main_section.inner_tab_index = 1;
+                genpdf_button_clicked()
             }
         }
+    }
 
-        Rectangle {
-            background: Palette.background;
-            width: parent.width * (100% - split);
-            min-height: 16px; /* @lsp:ignore-node */
+    Rectangle {
+        background: Palette.background;
+        width: parent.width * (100% - split);
+        x: parent.width * split;
+        min-height: 16px; /* @lsp:ignore-node */
             main_section := MainSection {
-                total_width: parent.width;
-                total_height: parent.height;
-                event: event;
-                race_event_present: race_event_set;
-                table_data: table_data;
-                table_changed => {
-                    root.table_changed()
-                }
+            total_width: parent.width;
+            total_height: parent.height;
+            event: event;
+            race_event_present: race_event_set;
+            table_data: table_data;
+            table_changed => {
+                root.table_changed()
             }
+            pdf_images: pdf_images;
+            new_pdf_image_width(new_width) => {
+                pdf_image_width = new_width;
+            }
+            inner_tab_index: tab_index;
         }
     }
 
@@ -129,6 +147,9 @@ export component MainWindow inherits Window {
         }
         settings_remove_path(i) => {
             settings_remove_path(i);
+        }
+        settings_update => {
+            general_settings_update(self.settings_data)
         }
         close_button_click => {
             settings_shown = false;

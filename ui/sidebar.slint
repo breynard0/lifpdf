@@ -9,6 +9,7 @@ export component Sidebar {
     callback settings_button_clicked();
     callback regen_table();
     callback filter_text_changed(string);
+    callback genpdf_button_clicked();
 
     VerticalLayout {
         spacing: 3px;
@@ -31,6 +32,9 @@ export component Sidebar {
 
         genpdf_button := Button {
             text: "Generate PDF";
+            clicked => {
+                genpdf_button_clicked()
+            }
         }
 
         print_button := Button {

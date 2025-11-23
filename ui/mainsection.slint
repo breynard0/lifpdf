@@ -1,5 +1,10 @@
 import { SlintEventRow } from "structs.slint";
-import { TabWidget, StandardTableView } from "std-widgets.slint";
+import {
+    TabWidget,
+    StandardTableView,
+    ScrollView,
+    VerticalBox,
+} from "std-widgets.slint";
 
 export component MainSection {
     in property <bool> race_event_present;
@@ -8,13 +13,24 @@ export component MainSection {
     in property <length> total_width: 100px;
     in property <length> total_height: 100px;
 
+    in property <int> inner_tab_index;
+    changed inner_tab_index => {
+        tabs.current-index = inner_tab_index;
+    }
+
+    in property <[image]> pdf_images;
+    callback new_pdf_image_width(float);
+
     out property <int> table_sort_index: -1;
     out property <bool> table_sort_ascending: true;
     callback table_changed();
 
-    TabWidget {
+    tabs := TabWidget {
         width: total_width;
         height: total_height;
+
+        current-index: 0;
+
         Tab {
             title: "Raw Data";
             if (race_event_present): VerticalLayout {
@@ -23,6 +39,7 @@ export component MainSection {
                 Text {
                     text: event.event-name + "\n" + event.event-code + " | " + event.start-time;
                     font-size: 24pt;
+                    x: parent.width * 0.01;
                 }
 
                 StandardTableView {
@@ -56,6 +73,32 @@ export component MainSection {
 
         Tab {
             title: "PDF";
+            Rectangle {
+                width: parent.width;
+                ScrollView {
+                    viewport-height: parent.height > parent.width ? parent.height * 2 : parent.width * 3;
+
+                    changed width => {
+                        new_pdf_image_width(self.width / 1px);
+                    }
+
+                    content := Rectangle {
+                        for i in pdf_images.length: Image {
+                            property <image> image: pdf_images[i];
+                            source: image;
+                            width: parent.width * 0.9;
+                            y: i * (self.height + 10px);
+                        }
+                    }
+                }
+            }
+        }
+
+        init => {
+            new_pdf_image_width(self.width / 1px);
+        }
+        changed width => {
+            new_pdf_image_width(self.width / 1px);
         }
     }
 }
