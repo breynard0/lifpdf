@@ -10,6 +10,7 @@ export component Sidebar {
     callback regen_table();
     callback filter_text_changed(string);
     callback genpdf_button_clicked();
+    callback print_button_clicked();
 
     VerticalLayout {
         spacing: 3px;
@@ -39,6 +40,9 @@ export component Sidebar {
 
         print_button := Button {
             text: "Print";
+            clicked => {
+                print_button_clicked()
+            }
         }
 
         settings_button := Button {
@@ -65,7 +69,6 @@ export component Sidebar {
         ListView {
             height: 70%;
             for i in lif_files.length: TouchArea {
-//            for i in 20: TouchArea {
                 property <string> lif_file: lif_files[i];
                 Rectangle {
                     background: i == selected_lif_file ? Palette.selection-background : Palette.alternate-background;

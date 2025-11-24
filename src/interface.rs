@@ -284,10 +284,11 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
     }
 
     // PDF generation and display
-    let pub_pdf = Rc::new(RefCell::new(None));
+    let pub_pdf_bitmap = Rc::new(RefCell::new(None));
     {
         let main_window_weak = main_window.as_weak();
         let cur_path_clone = cur_path.clone();
+        let pub_pdf_clone = pub_pdf_bitmap.clone();
         main_window.on_genpdf_button_clicked(move || {
             if let Some(main_window) = main_window_weak.upgrade() {
                 let path = cur_path_clone.borrow();
@@ -309,7 +310,7 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
 
                             let (images, width, height) = pdf_to_image(&mut pdf).unwrap();
                             let mut slint_imgs = vec![];
-                            for image in images {
+                            for image in &images {
                                 let img_buf = slint::Image::from_rgba8(
                                     slint::SharedPixelBuffer::clone_from_slice(
                                         &image, width, height,
@@ -337,14 +338,25 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
                                 .expect("Error writing PDF to disk");
                             }
 
-                            let mut pub_pdf = pub_pdf.borrow_mut();
-                            *pub_pdf = Some(pdf);
+                            let mut pub_pdf = pub_pdf_clone.borrow_mut();
+                            *pub_pdf = Some((images, width, height));
                         }
                         Err(e) => {
                             println!("Failed to parse {}, {}", path, e);
                         }
                     };
                 }
+            }
+        });
+    }
+
+    // Printing
+    {
+        let pub_pdf_clone = pub_pdf_bitmap.clone();
+        main_window.on_print_button_clicked(move || {
+            let pdf = pub_pdf_clone.borrow();
+            if let Some(doc) = pdf.as_ref() {
+                crate::print::print_document(&doc.0, doc.1, doc.2);
             }
         });
     }

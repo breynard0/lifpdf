@@ -36,6 +36,7 @@ export component MainWindow inherits Window {
     in property <int> tab_index: 0;
 
     callback genpdf_button_clicked();
+    callback print_button_clicked();
 
     callback table_changed();
     callback filter_changed();
@@ -100,6 +101,9 @@ export component MainWindow inherits Window {
             genpdf_button_clicked => {
                 main_section.inner_tab_index = 1;
                 genpdf_button_clicked()
+            }
+            print_button_clicked => {
+                print_button_clicked()
             }
         }
     }

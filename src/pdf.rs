@@ -189,10 +189,11 @@ pub fn pdf_to_image(
 
     let interpreter_settings = InterpreterSettings::default();
 
-    let scaling = 4.0;
+    let render_upscaling = 4.0;
+
     let render_settings = RenderSettings {
-        x_scale: scaling,
-        y_scale: scaling,
+        x_scale: render_upscaling,
+        y_scale: render_upscaling,
         ..Default::default()
     };
 
@@ -206,7 +207,7 @@ pub fn pdf_to_image(
 
     Ok((
         out,
-        (scaling * hayro_pdf.pages()[0].render_dimensions().0) as u32,
-        (scaling * hayro_pdf.pages()[0].render_dimensions().1) as u32,
+        (render_upscaling * hayro_pdf.pages()[0].render_dimensions().0) as u32,
+        (render_upscaling * hayro_pdf.pages()[0].render_dimensions().1) as u32,
     ))
 }
