@@ -43,7 +43,7 @@ pub fn load_config() -> Option<SettingsData> {
         let analog: SettingsDataAnalog = serde_json::from_str(
             &std::fs::read_to_string(path).expect("Failed to read config file"),
         )
-            .unwrap();
+        .unwrap();
 
         Some(SettingsData {
             pdf_output_enabled: analog.pdf_output_enabled,

@@ -17,6 +17,38 @@ pub struct SkaterTime {
     pub subsecond: f32,
 }
 
+impl std::ops::Add for SkaterTime {
+    type Output = SkaterTime;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut out = Self {
+            minutes: self.minutes + rhs.minutes,
+            seconds: self.seconds + rhs.seconds,
+            subsecond: self.subsecond + rhs.subsecond,
+        };
+
+        while out.subsecond >= 1.0 {
+            out.subsecond -= 1.0;
+            out.seconds += 1;
+        }
+        while out.seconds >= 60 {
+            out.seconds -= 60;
+            out.minutes += 1;
+        }
+
+        out
+    }
+}
+
+impl SkaterTime {
+    pub fn absolute_difference_secs(&self, other: Self) -> f32 {
+        let mut first_float = self.minutes as f32 * 60.0 + self.seconds as f32 + self.subsecond;
+        let mut second_float = other.minutes as f32 * 60.0 + other.seconds as f32 + other.subsecond;
+
+        (first_float - second_float).abs()
+    }
+}
+
 impl Into<SkaterTime> for SlintSkaterTime {
     fn into(self) -> SkaterTime {
         SkaterTime {
@@ -107,9 +139,18 @@ impl RaceEvent {
         };
 
         let event_row = EventRow {
-            event_code: first_line_split.first().unwrap().to_string(),
-            event_name: first_line_split.get(3).unwrap().to_string(),
-            start_time: first_line_split.last().unwrap().to_string(),
+            event_code: first_line_split
+                .first()
+                .ok_or("Event code not found")?
+                .to_string(),
+            event_name: first_line_split
+                .get(3)
+                .ok_or("Event name not found")?
+                .to_string(),
+            start_time: first_line_split
+                .last()
+                .ok_or("Start time not found")?
+                .to_string(),
         };
 
         // Assume each subsequent line is competitor data and parse accordingly

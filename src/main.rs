@@ -4,6 +4,7 @@
 use native_dialog::MessageLevel;
 
 mod config;
+mod flag;
 mod interface;
 mod parse;
 mod pdf;
@@ -17,10 +18,7 @@ fn main() -> Result<(), slint::PlatformError> {
         eprintln!("{}", info.to_string());
 
         native_dialog::DialogBuilder::message()
-            .set_text(format!(
-                "Error: {}",
-                info.to_string()
-            ))
+            .set_text(format!("Error: {}", info.to_string()))
             .set_title("Error in lifpdf")
             .set_level(MessageLevel::Error)
             .alert()

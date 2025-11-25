@@ -1,3 +1,4 @@
+use crate::flag::is_time_discrepancy;
 use crate::parse::*;
 use crate::table_data::gen_table_row;
 use hayro::{RenderSettings, render};
@@ -70,10 +71,32 @@ pub fn gen_timesheet_pdf(event: RaceEvent) -> Result<Document, Box<dyn std::erro
     pages[0].add_table(&skater_table_header)?;
     pages[0].add_table(&skater_table)?;
 
-    let transponder_y = flow.cursor_position().1
+    let flags_y = flow.cursor_position().1
         - skater_table.get_height()
         - skater_table_header.get_height()
         - 20.0;
+
+    // Flag values that seem incorrect
+    let mut flags_space_taken = 0.0;
+    for competitor in &event.competitors {
+        if let Some(pdf_time) = competitor.time {
+            let has_discrepancy = is_time_discrepancy(pdf_time, &competitor.splits);
+            if has_discrepancy {
+                flags_space_taken += pages[0]
+                    .text()
+                    .at(width * 0.05, flags_y - flags_space_taken)
+                    .set_font(Font::HelveticaBold, 10.0)
+                    .write_line(&format!(
+                        "Potential mismatch, lane {}, place {}",
+                        competitor.lane.unwrap_or(255),
+                        competitor.place.unwrap_or(255)
+                    ))?
+                    .font_size();
+            }
+        }
+    }
+
+    let transponder_y = flags_y - flags_space_taken - 20.0;
     pages[0]
         .text()
         .at(width * 0.05, transponder_y)

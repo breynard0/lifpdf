@@ -3,6 +3,7 @@ use crate::parse::{RaceEvent, cmp_slint_skater_time};
 use crate::pdf::{gen_timesheet_pdf, pdf_to_image};
 use crate::table_data::gen_table_row;
 use crate::{MainWindow, SettingsData, SlintCompetitorRow, SlintRaceEvent};
+use native_dialog::MessageLevel;
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use slint::{
     ComponentHandle, Model, ModelExt, ModelRc, SharedString, StandardListViewItem, VecModel, Weak,
@@ -197,7 +198,12 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
                                     *cur_path = Some(e.to_string_lossy().to_string());
                                 }
                                 Err(e) => {
-                                    println!("Failed to parse {}, {}", event_name, e);
+                                    let _ = native_dialog::DialogBuilder::message()
+                                        .set_level(MessageLevel::Error)
+                                        .set_title("Error parsing file")
+                                        .set_text(format!("Failed to parse {}, {}", event_name, e))
+                                        .alert()
+                                        .show();
                                 }
                             };
                         }
