@@ -10,7 +10,9 @@ import { MainSection } from "mainsection.slint";
 import { SettingsData, SettingsMenu } from "settings.slint";
 
 export component MainWindow inherits Window {
+    title: "lifpdf";
     resize-border-width: 2px;
+
     property <float> split: 20%;
     property <bool> slider_hovered: false;
     property <bool> resizing: false;
@@ -35,7 +37,7 @@ export component MainWindow inherits Window {
 
     in property <int> tab_index: 0;
 
-    callback genpdf_button_clicked();
+    callback save_button_clicked();
     callback print_button_clicked();
 
     callback table_changed();
@@ -91,16 +93,14 @@ export component MainWindow inherits Window {
             lif_files: lif_files;
             regen_table => {
                 selected_lif_file = self.selected_lif_file;
-                main_section.inner_tab_index = 0;
                 table_changed()
             }
             filter_text_changed(text) => {
                 lif_file_filter = text;
                 filter_changed()
             }
-            genpdf_button_clicked => {
-                main_section.inner_tab_index = 1;
-                genpdf_button_clicked()
+            save_button_clicked => {
+                save_button_clicked()
             }
             print_button_clicked => {
                 print_button_clicked()
@@ -126,7 +126,6 @@ export component MainWindow inherits Window {
             new_pdf_image_width(new_width) => {
                 pdf_image_width = new_width;
             }
-            inner_tab_index: tab_index;
         }
     }
 

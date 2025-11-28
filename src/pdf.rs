@@ -119,7 +119,7 @@ pub fn gen_timesheet_pdf(event: RaceEvent) -> Result<Document, Box<dyn std::erro
                 if competitor.splits[i].subsecond >= 0.0 {
                     cur_row.push(competitor.splits[i].to_string());
                 } else {
-                    cur_row.push("Junk".to_string())
+                    cur_row.push("".to_string())
                 }
             } else {
                 cur_row.push(String::new());
@@ -196,7 +196,7 @@ pub fn gen_timesheet_pdf(event: RaceEvent) -> Result<Document, Box<dyn std::erro
     for page in pages {
         doc.add_page(page);
     }
-    doc.save("./out.pdf").unwrap();
+    // doc.save("./out.pdf").unwrap();
 
     Ok(doc)
 }

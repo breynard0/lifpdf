@@ -9,7 +9,7 @@ export component Sidebar {
     callback settings_button_clicked();
     callback regen_table();
     callback filter_text_changed(string);
-    callback genpdf_button_clicked();
+    callback save_button_clicked();
     callback print_button_clicked();
 
     VerticalLayout {
@@ -31,10 +31,10 @@ export component Sidebar {
             }
         }
 
-        genpdf_button := Button {
-            text: "Generate PDF";
+        save_button := Button {
+            text: "Save";
             clicked => {
-                genpdf_button_clicked()
+                save_button_clicked()
             }
         }
 

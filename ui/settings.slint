@@ -24,6 +24,7 @@ export component SettingsMenu {
     callback close_button_click();
 
     property <int> selected_path: -1;
+    property <string> last_path_text: "";
 
     // Wrapping in a TouchArea to prevent from focusing to things underneath
     TouchArea {
@@ -53,8 +54,13 @@ export component SettingsMenu {
                         for i in settings_data.search-paths.length: LineEdit {
                             text: settings_data.search-paths[i];
 
+                            edited(text) => {
+                                last_path_text = text;
+                            }
+
                             accepted(text) => {
                                 settings_edit_path(i, text);
+                                settings_update();
                             }
 
                             changed has-focus => {
@@ -62,6 +68,7 @@ export component SettingsMenu {
                                     selected_path = i;
                                 } else {
                                     settings_edit_path(i, self.text);
+                                    settings_update();
                                 }
                             }
                         }
@@ -114,6 +121,10 @@ export component SettingsMenu {
                 x: parent.width - self.width - 10px;
                 y: parent.height - self.height - 10px;
                 clicked => {
+                    if (selected_path >= 0 && last_path_text != "") {
+                        settings_edit_path(selected_path, last_path_text);
+                    }
+                    settings_update();
                     close_button_click();
                 }
             }

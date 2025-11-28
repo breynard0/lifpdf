@@ -42,8 +42,8 @@ impl std::ops::Add for SkaterTime {
 
 impl SkaterTime {
     pub fn absolute_difference_secs(&self, other: Self) -> f32 {
-        let mut first_float = self.minutes as f32 * 60.0 + self.seconds as f32 + self.subsecond;
-        let mut second_float = other.minutes as f32 * 60.0 + other.seconds as f32 + other.subsecond;
+        let first_float = self.minutes as f32 * 60.0 + self.seconds as f32 + self.subsecond;
+        let second_float = other.minutes as f32 * 60.0 + other.seconds as f32 + other.subsecond;
 
         (first_float - second_float).abs()
     }

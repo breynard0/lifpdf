@@ -9,5 +9,5 @@ pub fn is_time_discrepancy(pf_time: SkaterTime, splits: &Vec<SkaterTime>) -> boo
         lowest_difference = diff.min(lowest_difference);
     }
 
-    lowest_difference > 0.4
+    lowest_difference > 0.4 && splits.len() > 0
 }
