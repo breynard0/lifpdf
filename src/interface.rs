@@ -25,7 +25,7 @@ fn watcher_fn(res: notify::Result<notify::Event>, main_window_weak: Weak<MainWin
                         reload_lif_files(&main_window);
                     };
                 })
-                .expect("Failed to get Slint context in watcher closure");
+                    .expect("Failed to get Slint context in watcher closure");
             }
         },
         Err(e) => println!("Watch Error: {:?}", e),
@@ -98,7 +98,7 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
             let main_window_weak_clone = main_window_weak.clone();
             watcher_fn(e, main_window_weak_clone);
         })
-        .expect("Could not watch directories"),
+            .expect("Could not watch directories"),
     ));
     set_watcher(watcher.clone(), &main_window);
 
@@ -184,13 +184,18 @@ pub fn interface_main_window(main_window: &MainWindow) -> Result<(), slint::Plat
 
                     for search_path in load_config().unwrap().search_paths.iter() {
                         let search_path = search_path.to_string();
-                        for file in read_dir(search_path).expect("Failed to read directory") {
-                            if let Ok(file) = file {
-                                if file.file_name().to_string_lossy().to_string() == *event_name {
-                                    event_path = Some(file.path());
-                                    break;
+                        match read_dir(search_path) {
+                            Ok(r) => {
+                                for file in r {
+                                    if let Ok(file) = file {
+                                        if file.file_name().to_string_lossy().to_string() == *event_name {
+                                            event_path = Some(file.path());
+                                            break;
+                                        }
+                                    }
                                 }
                             }
+                            Err(_) => {}
                         }
                     }
 
@@ -400,7 +405,7 @@ fn generate_display_pdf(
                         load_config().unwrap().pdf_output_path,
                         event.event.event_code
                     ))
-                    .expect("Error writing PDF to disk");
+                        .expect("Error writing PDF to disk");
                 }
 
                 let mut pub_pdf_img = pub_pdf_img_clone.borrow_mut();
@@ -429,7 +434,7 @@ fn set_watcher(watcher_cln: Arc<Mutex<RecommendedWatcher>>, main_window: &MainWi
         let main_window_weak_clone = main_window_weak.clone();
         watcher_fn(e, main_window_weak_clone);
     })
-    .expect("Could not watch directories");
+        .expect("Could not watch directories");
     // Add paths
     for path in paths {
         if std::fs::exists(&path).unwrap_or(false) {
